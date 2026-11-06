@@ -34,8 +34,8 @@ jobs:
           mkdir -p clang
           ok=0
           for i in 1 2 3; do
-            if wget -q --timeout=90 \
-              https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/clang-r416183b/clang-r416183b.tar.gz \
+            if wget -q --timeout=180 \
+              https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/llvm-r416183/clang-r416183.tar.gz \
               -O clang.tgz; then ok=1; break; fi
             echo "download retry $i"; sleep 5
           done
