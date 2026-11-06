@@ -29,6 +29,38 @@ jobs:
           curl -LSs https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh \
             | bash -s v4.2.0-rc3
 
+      - name: Fix dangling Kconfig references
+        working-directory: kernel
+        run: |
+          python3 - <<'PY'
+          import os, re
+          root = os.getcwd()
+          pat = re.compile(r'^(\s*)(r?source)\s+"([^"]+)"')
+          fixed = []
+          for dp, dn, fn in os.walk(root):
+              for f in fn:
+                  if not f.endswith("Kconfig"):
+                      continue
+                  p = os.path.join(dp, f)
+                  lines = open(p, encoding="utf-8", errors="replace").read().splitlines()
+                  changed = False
+                  for i, ln in enumerate(lines):
+                      m = pat.match(ln)
+                      if not m:
+                          continue
+                      ind, kind, ref = m.groups()
+                      base = dp if kind == "rsource" else root
+                      if not os.path.exists(os.path.join(base, ref)):
+                          lines[i] = "# " + ln + "  # missing in source drop"
+                          changed = True
+                  if changed:
+                      open(p, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+                      fixed.append(os.path.relpath(p, root))
+          print("patched Kconfig files:", len(fixed))
+          for p in fixed:
+              print("  ", p)
+          PY
+
       - name: Download AOSP clang r416183b
         run: |
           mkdir -p clang
